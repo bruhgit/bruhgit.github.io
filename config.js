@@ -10,8 +10,7 @@ const CONFIG = {
     
     // Social / Contact Links
     links: {
-        github: "https://github.com/bruhgit",
-        email: "mailto:meowpubgg@gmail.com"
+        github: "https://github.com/bruhgit"
     },
 
     // Skills & Badges for Home tab
