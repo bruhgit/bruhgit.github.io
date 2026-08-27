@@ -1,7 +1,7 @@
 /**
  * omerdev - Application Logic
  * Manages tab switching, GitHub API repository fetching, one-click zip downloads,
- * and profile README.md rendering.
+ * language filtering, clone command copying, and profile README.md rendering.
  */
 
 // Language Color Mapping
@@ -26,8 +26,11 @@ const State = {
     currentTab: 'home',
     repositories: [],
     filteredRepositories: [],
+    selectedLanguage: 'ALL',
+    searchQuery: '',
     userData: null,
-    isLoaded: false
+    isLoaded: false,
+    aboutLoaded: false
 };
 
 // Initialize Application
@@ -35,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initData();
     setupSearch();
+    setupKeyboardShortcuts();
 });
 
 /* ==========================================================================
@@ -42,14 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
    ========================================================================== */
 
 function initNavigation() {
-    // Check initial hash or default to home
     const hash = window.location.hash.replace('#', '').toLowerCase();
     const validTabs = ['home', 'downloads', 'about'];
     const initialTab = validTabs.includes(hash) ? hash : 'home';
     
     switchTab(initialTab, false);
 
-    // Hash change event listener
     window.addEventListener('hashchange', () => {
         const currentHash = window.location.hash.replace('#', '').toLowerCase();
         if (validTabs.includes(currentHash)) {
@@ -57,7 +59,6 @@ function initNavigation() {
         }
     });
 
-    // Nav link click events
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
             const targetTab = link.getAttribute('data-tab');
@@ -76,7 +77,6 @@ function switchTab(tabId, updateHash = true) {
         window.location.hash = tabId;
     }
 
-    // Update Nav links
     document.querySelectorAll('.nav-link').forEach(link => {
         if (link.getAttribute('data-tab') === tabId) {
             link.classList.add('active');
@@ -85,7 +85,6 @@ function switchTab(tabId, updateHash = true) {
         }
     });
 
-    // Update Tab containers
     document.querySelectorAll('.tab-content').forEach(content => {
         if (content.id === `tab-${tabId}`) {
             content.classList.add('active');
@@ -94,10 +93,8 @@ function switchTab(tabId, updateHash = true) {
         }
     });
 
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Tab specific load actions
     if (tabId === 'about' && !State.aboutLoaded) {
         loadAboutReadme();
     }
@@ -115,7 +112,6 @@ async function initData() {
     ]);
 }
 
-// Fetch GitHub User Info
 async function fetchUserData() {
     try {
         const response = await fetch(`https://api.github.com/users/${CONFIG.githubUsername}`);
@@ -138,7 +134,6 @@ async function fetchUserData() {
 }
 
 function updateUserUI(user) {
-    // Update user avatars and handle tags
     const avatarEls = document.querySelectorAll('.user-avatar');
     avatarEls.forEach(el => {
         el.src = user.avatar_url;
@@ -155,31 +150,31 @@ function updateUserUI(user) {
     handleEls.forEach(el => el.textContent = `@${user.login}`);
 }
 
-// Fetch Repositories
 async function fetchRepositories() {
-    const downloadsContainer = document.getElementById('downloads-list');
-    const homeFeaturedContainer = document.getElementById('home-featured-list');
-    
+    const excluded = (CONFIG.excludedRepos || ['bruhgit', 'omerdev']).map(name => name.toLowerCase());
+
     try {
         const response = await fetch(`https://api.github.com/users/${CONFIG.githubUsername}/repos?per_page=100&sort=updated`);
         if (!response.ok) throw new Error('Repo fetch failed (Rate Limit or Network)');
         const data = await response.json();
         
-        // Exclude profile README repository itself from downloads list if wanted, or keep it
-        State.repositories = data.filter(repo => !repo.fork || repo.name === 'lively');
-        if (State.repositories.length === 0) {
-            State.repositories = data;
-        }
+        // Filter out excluded repos and non-important forks
+        State.repositories = data.filter(repo => {
+            const isExcluded = excluded.includes(repo.name.toLowerCase());
+            return !isExcluded;
+        });
     } catch (err) {
         console.warn('Using fallback repositories:', err);
-        State.repositories = CONFIG.fallbackRepos;
+        State.repositories = CONFIG.fallbackRepos.filter(repo => !excluded.includes(repo.name.toLowerCase()));
     }
 
     State.filteredRepositories = [...State.repositories];
     State.isLoaded = true;
 
+    renderLanguageChips();
     renderRepositories();
     renderFeaturedRepos();
+    renderStatsAndLanguageBar();
     updateRepoCountBadge();
 }
 
@@ -198,7 +193,96 @@ function renderSkills() {
     `).join('');
 }
 
-// Format Repo Size
+function renderStatsAndLanguageBar() {
+    const statsContainer = document.getElementById('home-stats-grid');
+    const barContainer = document.getElementById('home-language-bar');
+    const legendContainer = document.getElementById('home-language-legend');
+
+    if (!statsContainer && !barContainer) return;
+
+    // Calculate total stars and language distribution
+    let totalStars = 0;
+    const langCounts = {};
+
+    State.repositories.forEach(repo => {
+        totalStars += repo.stargazers_count || 0;
+        if (repo.language) {
+            langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
+        }
+    });
+
+    // Render Stats Cards
+    if (statsContainer) {
+        statsContainer.innerHTML = `
+            <div class="stat-card">
+                <span class="stat-number">${State.repositories.length}</span>
+                <span class="stat-label">Public Projects</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">${Object.keys(langCounts).length}</span>
+                <span class="stat-label">Core Languages</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">600K+</span>
+                <span class="stat-label">Lines of Code</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">0</span>
+                <span class="stat-label">Null Pointers</span>
+            </div>
+        `;
+    }
+
+    // Render Language Bar
+    if (barContainer && legendContainer) {
+        const totalWithLang = Object.values(langCounts).reduce((a, b) => a + b, 0);
+        
+        if (totalWithLang > 0) {
+            barContainer.innerHTML = Object.entries(langCounts).map(([lang, count]) => {
+                const percent = ((count / totalWithLang) * 100).toFixed(1);
+                const color = LANGUAGE_COLORS[lang] || '#6c757d';
+                return `<div class="lang-segment" style="width: ${percent}%; background-color: ${color};" title="${lang}: ${percent}%"></div>`;
+            }).join('');
+
+            legendContainer.innerHTML = Object.entries(langCounts).map(([lang, count]) => {
+                const percent = ((count / totalWithLang) * 100).toFixed(1);
+                const color = LANGUAGE_COLORS[lang] || '#6c757d';
+                return `
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background-color: ${color};"></span>
+                        <span class="legend-name">${lang}</span>
+                        <span class="legend-percent">${percent}%</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+}
+
+function renderLanguageChips() {
+    const container = document.getElementById('language-chips-container');
+    if (!container) return;
+
+    const languages = new Set();
+    State.repositories.forEach(repo => {
+        if (repo.language) languages.add(repo.language);
+    });
+
+    const langList = ['ALL', ...Array.from(languages)];
+
+    container.innerHTML = langList.map(lang => `
+        <button class="chip-btn ${State.selectedLanguage === lang ? 'active' : ''}" onclick="filterByLanguage('${lang}')">
+            ${lang === 'ALL' ? `All (${State.repositories.length})` : lang}
+        </button>
+    `).join('');
+}
+
+window.filterByLanguage = function(lang) {
+    State.selectedLanguage = lang;
+    renderLanguageChips();
+    applyFilters();
+};
+
 function formatSize(kb) {
     if (!kb) return '0 KB';
     if (kb >= 1024) {
@@ -207,10 +291,13 @@ function formatSize(kb) {
     return kb + ' KB';
 }
 
-// Build ZIP Download URL
 function getZipDownloadUrl(repo) {
     const branch = repo.default_branch || 'main';
     return `https://github.com/${repo.full_name || `${CONFIG.githubUsername}/${repo.name}`}/archive/refs/heads/${branch}.zip`;
+}
+
+function getCloneUrl(repo) {
+    return `git clone https://github.com/${repo.full_name || `${CONFIG.githubUsername}/${repo.name}`}.git`;
 }
 
 // Render Repositories in Downloads Tab
@@ -221,7 +308,8 @@ function renderRepositories() {
     if (State.filteredRepositories.length === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
-                <p>🔍 No repositories found matching your search query.</p>
+                <p>🔍 No repositories found matching the active filter or query.</p>
+                <button class="btn btn-secondary btn-sm" style="margin-top: 1rem;" onclick="resetFilters()">Reset Filters</button>
             </div>
         `;
         return;
@@ -230,6 +318,7 @@ function renderRepositories() {
     container.innerHTML = State.filteredRepositories.map(repo => {
         const langColor = LANGUAGE_COLORS[repo.language] || '#888';
         const downloadUrl = getZipDownloadUrl(repo);
+        const cloneCommand = getCloneUrl(repo);
         const repoUrl = repo.html_url || `https://github.com/${CONFIG.githubUsername}/${repo.name}`;
         const description = repo.description || 'No description provided for this repository.';
         
@@ -275,6 +364,12 @@ function renderRepositories() {
                             </svg>
                             Download ZIP
                         </a>
+                        <button onclick="copyCloneCommand('${cloneCommand}')" class="btn btn-secondary btn-sm" title="Copy git clone command">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
                         <a href="${repoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="View Source on GitHub">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -289,12 +384,10 @@ function renderRepositories() {
     }).join('');
 }
 
-// Render Featured Projects on Home Tab
 function renderFeaturedRepos() {
     const container = document.getElementById('home-featured-list');
     if (!container) return;
 
-    // Pick top 4 repositories
     const featured = State.repositories.slice(0, 4);
 
     container.innerHTML = featured.map(repo => {
@@ -329,7 +422,7 @@ function renderFeaturedRepos() {
                             ⬇ Download ZIP
                         </a>
                         <a href="${repoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
-                            GitHub
+                            GitHub ↗
                         </a>
                     </div>
                 </div>
@@ -339,7 +432,7 @@ function renderFeaturedRepos() {
 }
 
 /* ==========================================================================
-   Search & Filter
+   Search, Filter & Keyboard Shortcuts
    ========================================================================== */
 
 function setupSearch() {
@@ -347,29 +440,84 @@ function setupSearch() {
     if (!searchInput) return;
 
     searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        
-        if (!query) {
-            State.filteredRepositories = [...State.repositories];
-        } else {
-            State.filteredRepositories = State.repositories.filter(repo => {
-                const name = (repo.name || '').toLowerCase();
-                const desc = (repo.description || '').toLowerCase();
-                const lang = (repo.language || '').toLowerCase();
-                return name.includes(query) || desc.includes(query) || lang.includes(query);
-            });
-        }
+        State.searchQuery = e.target.value.toLowerCase().trim();
+        applyFilters();
+    });
+}
 
-        renderRepositories();
-        updateRepoCountBadge();
+function applyFilters() {
+    State.filteredRepositories = State.repositories.filter(repo => {
+        const matchesQuery = !State.searchQuery || 
+            (repo.name || '').toLowerCase().includes(State.searchQuery) ||
+            (repo.description || '').toLowerCase().includes(State.searchQuery) ||
+            (repo.language || '').toLowerCase().includes(State.searchQuery);
+
+        const matchesLanguage = State.selectedLanguage === 'ALL' || repo.language === State.selectedLanguage;
+
+        return matchesQuery && matchesLanguage;
+    });
+
+    renderRepositories();
+    updateRepoCountBadge();
+}
+
+window.resetFilters = function() {
+    State.selectedLanguage = 'ALL';
+    State.searchQuery = '';
+    const searchInput = document.getElementById('repo-search');
+    if (searchInput) searchInput.value = '';
+    renderLanguageChips();
+    applyFilters();
+};
+
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            switchTab('downloads', true);
+            setTimeout(() => {
+                const searchInput = document.getElementById('repo-search');
+                if (searchInput) searchInput.focus();
+            }, 100);
+        }
     });
 }
 
 function updateRepoCountBadge() {
     const badge = document.getElementById('repo-count-badge');
     if (badge) {
-        badge.textContent = `${State.filteredRepositories.length} repositories`;
+        badge.textContent = `${State.filteredRepositories.length} projects`;
     }
+}
+
+/* ==========================================================================
+   Clipboard Copy & Toast Notification
+   ========================================================================== */
+
+window.copyCloneCommand = function(cmd) {
+    navigator.clipboard.writeText(cmd).then(() => {
+        showToast(`> Copied: ${cmd}`);
+    }).catch(() => {
+        showToast(`> Failed to copy to clipboard`);
+    });
+};
+
+function showToast(message) {
+    let toast = document.getElementById('app-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'app-toast';
+        toast.className = 'toast-notification';
+        document.body.appendChild(toast);
+    }
+
+    toast.textContent = message;
+    toast.classList.add('show');
+
+    clearTimeout(window.toastTimer);
+    window.toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2800);
 }
 
 /* ==========================================================================
@@ -390,7 +538,6 @@ async function loadAboutReadme() {
     let markdown = '';
 
     try {
-        // Try fetching main branch first, then master branch
         let res = await fetch(`https://raw.githubusercontent.com/${CONFIG.githubUsername}/${CONFIG.githubUsername}/main/README.md`);
         if (!res.ok) {
             res = await fetch(`https://raw.githubusercontent.com/${CONFIG.githubUsername}/${CONFIG.githubUsername}/master/README.md`);
@@ -403,7 +550,6 @@ async function loadAboutReadme() {
         markdown = CONFIG.fallbackReadme;
     }
 
-    // Render using marked.js if available, otherwise fallback to safe text rendering
     if (typeof marked !== 'undefined') {
         marked.setOptions({
             gfm: true,
@@ -413,7 +559,6 @@ async function loadAboutReadme() {
         
         let html = marked.parse(markdown);
         
-        // Sanitize if DOMPurify is available
         if (typeof DOMPurify !== 'undefined') {
             html = DOMPurify.sanitize(html, {
                 ADD_TAGS: ['iframe'],
@@ -428,10 +573,6 @@ async function loadAboutReadme() {
 
     State.aboutLoaded = true;
 }
-
-/* ==========================================================================
-   Utility Helpers
-   ========================================================================== */
 
 function escapeHtml(str) {
     if (!str) return '';

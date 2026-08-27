@@ -8,6 +8,9 @@ const CONFIG = {
     tagline: "Systems Programmer & Full-Stack Developer",
     bio: "Living inside 600,000+ line C++/C/C# codebases, getting excited whenever something says 'no null'.",
     
+    // Repositories to hide from Downloads and Featured list
+    excludedRepos: ["bruhgit", "omerdev"],
+
     // Social / Contact Links
     links: {
         github: "https://github.com/bruhgit"

@@ -88,8 +88,22 @@
                     </div>
                 </div>
 
+                <!-- Stats Grid -->
+                <div class="stats-grid" id="home-stats-grid">
+                    <!-- Populated dynamically by app.js -->
+                </div>
+
+                <!-- Language Distribution Bar -->
+                <div class="language-card">
+                    <div class="language-header">
+                        <span class="language-title">System & Project Tech Stack Distribution</span>
+                    </div>
+                    <div class="lang-bar" id="home-language-bar"></div>
+                    <div class="lang-legend" id="home-language-legend"></div>
+                </div>
+
                 <!-- Featured Projects on Home -->
-                <div class="section-header">
+                <div class="section-header" style="margin-top: 2.5rem;">
                     <h2 class="section-title">Featured Repositories</h2>
                     <a href="#downloads" onclick="switchTab('downloads')">View all downloads →</a>
                 </div>
@@ -108,7 +122,10 @@
                 <div class="downloads-controls">
                     <div class="search-box">
                         <span class="search-icon">🔍</span>
-                        <input type="text" id="repo-search" class="search-input" placeholder="Search repositories by name, language, or topic..." autocomplete="off">
+                        <input type="text" id="repo-search" class="search-input" placeholder="Search projects by name, language or topic... (Press '/' to focus)" autocomplete="off">
+                    </div>
+                    <div class="chips-wrapper" id="language-chips-container">
+                        <!-- Populated with language filter chips dynamically -->
                     </div>
                 </div>
 
@@ -156,6 +173,9 @@
             </div>
         </footer>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div id="app-toast" class="toast-notification"></div>
 
     <!-- Scripts -->
     <script src="config.js"></script>
