@@ -159,24 +159,38 @@ async function fetchRepositories() {
         const data = await response.json();
         
         // Filter out excluded repos, website repo, profile repo
-        State.repositories = data.filter(repo => {
-            const name = (repo.name || '').toLowerCase().trim();
-            const fullName = (repo.full_name || '').toLowerCase().trim();
-            const isExcluded = 
-                excluded.includes(name) || 
-                name.includes('.github.io') || 
-                fullName.includes('.github.io') ||
-                name === CONFIG.githubUsername.toLowerCase() ||
-                name === 'omerdev' ||
-                name === 'bruhgit';
-            return !isExcluded;
-        });
+        State.repositories = data
+            .filter(repo => {
+                const name = (repo.name || '').toLowerCase().trim();
+                const fullName = (repo.full_name || '').toLowerCase().trim();
+                const isExcluded = 
+                    excluded.includes(name) || 
+                    name.includes('.github.io') || 
+                    fullName.includes('.github.io') ||
+                    name === CONFIG.githubUsername.toLowerCase() ||
+                    name === 'omerdev' ||
+                    name === 'bruhgit';
+                return !isExcluded;
+            })
+            .map(repo => {
+                if (CONFIG.repoOverrides && CONFIG.repoOverrides[repo.name]) {
+                    return { ...repo, ...CONFIG.repoOverrides[repo.name] };
+                }
+                return repo;
+            });
     } catch (err) {
         console.warn('Using fallback repositories:', err);
-        State.repositories = CONFIG.fallbackRepos.filter(repo => {
-            const name = (repo.name || '').toLowerCase().trim();
-            return !excluded.includes(name) && !name.includes('.github.io') && name !== 'bruhgit';
-        });
+        State.repositories = CONFIG.fallbackRepos
+            .filter(repo => {
+                const name = (repo.name || '').toLowerCase().trim();
+                return !excluded.includes(name) && !name.includes('.github.io') && name !== 'bruhgit';
+            })
+            .map(repo => {
+                if (CONFIG.repoOverrides && CONFIG.repoOverrides[repo.name]) {
+                    return { ...repo, ...CONFIG.repoOverrides[repo.name] };
+                }
+                return repo;
+            });
     }
 
     State.filteredRepositories = [...State.repositories];
@@ -211,24 +225,27 @@ function renderStatsAndLanguageBar() {
 
     if (!statsContainer && !barContainer) return;
 
-    // Calculate total stars and language distribution
-    let totalStars = 0;
-    const langCounts = {};
+    // Use configured distribution or calculate from repos
+    let distribution = [];
 
-    State.repositories.forEach(repo => {
-        totalStars += repo.stargazers_count || 0;
-        if (repo.language) {
-            langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
-        }
-    });
-
-    // Sort languages descending (büyükten küçüğe sırala)
-    const sortedLangEntries = Object.entries(langCounts).sort((a, b) => {
-        if (b[1] !== a[1]) {
-            return b[1] - a[1];
-        }
-        return a[0].localeCompare(b[0]);
-    });
+    if (CONFIG.techStackDistribution && CONFIG.techStackDistribution.length > 0) {
+        distribution = [...CONFIG.techStackDistribution].sort((a, b) => b.percentage - a.percentage);
+    } else {
+        const langCounts = {};
+        State.repositories.forEach(repo => {
+            if (repo.language) {
+                langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
+            }
+        });
+        const total = Object.values(langCounts).reduce((a, b) => a + b, 0);
+        distribution = Object.entries(langCounts)
+            .map(([language, count]) => ({
+                language,
+                percentage: parseFloat(((count / total) * 100).toFixed(1)),
+                note: `${count} projects`
+            }))
+            .sort((a, b) => b.percentage - a.percentage);
+    }
 
     // Render Stats Cards
     if (statsContainer) {
@@ -238,7 +255,7 @@ function renderStatsAndLanguageBar() {
                 <span class="stat-label">Public Projects</span>
             </div>
             <div class="stat-card">
-                <span class="stat-number">${sortedLangEntries.length}</span>
+                <span class="stat-number">${distribution.length}</span>
                 <span class="stat-label">Core Languages</span>
             </div>
             <div class="stat-card">
@@ -254,27 +271,21 @@ function renderStatsAndLanguageBar() {
 
     // Render Language Bar (Sorted descending)
     if (barContainer && legendContainer) {
-        const totalWithLang = sortedLangEntries.reduce((acc, curr) => acc + curr[1], 0);
-        
-        if (totalWithLang > 0) {
-            barContainer.innerHTML = sortedLangEntries.map(([lang, count]) => {
-                const percent = ((count / totalWithLang) * 100).toFixed(1);
-                const color = LANGUAGE_COLORS[lang] || '#6c757d';
-                return `<div class="lang-segment" style="width: ${percent}%; background-color: ${color};" title="${lang}: ${percent}% (${count} projects)"></div>`;
-            }).join('');
+        barContainer.innerHTML = distribution.map(item => {
+            const color = LANGUAGE_COLORS[item.language] || '#6c757d';
+            return `<div class="lang-segment" style="width: ${item.percentage}%; background-color: ${color};" title="${item.language}: ${item.percentage}% ${item.note ? `(${item.note})` : ''}"></div>`;
+        }).join('');
 
-            legendContainer.innerHTML = sortedLangEntries.map(([lang, count]) => {
-                const percent = ((count / totalWithLang) * 100).toFixed(1);
-                const color = LANGUAGE_COLORS[lang] || '#6c757d';
-                return `
-                    <div class="legend-item">
-                        <span class="legend-dot" style="background-color: ${color};"></span>
-                        <span class="legend-name">${lang}</span>
-                        <span class="legend-percent">${percent}%</span>
-                    </div>
-                `;
-            }).join('');
-        }
+        legendContainer.innerHTML = distribution.map(item => {
+            const color = LANGUAGE_COLORS[item.language] || '#6c757d';
+            return `
+                <div class="legend-item" title="${item.note || ''}">
+                    <span class="legend-dot" style="background-color: ${color};"></span>
+                    <span class="legend-name">${item.language}</span>
+                    <span class="legend-percent">${item.percentage}%</span>
+                </div>
+            `;
+        }).join('');
     }
 }
 

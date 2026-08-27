@@ -11,6 +11,21 @@ const CONFIG = {
     // Repositories to hide from Downloads and Featured list
     excludedRepos: ["bruhgit", "omerdev", "bruhgit.github.io"],
 
+    // Custom language / metadata overrides (Fixes GitHub Linguist mistakes)
+    repoOverrides: {
+        "Uranium-Programming-Language": {
+            language: "C++",
+            description: "450,000+ lines of C++ programming language running on a Uranium Virtual Machine with JIT Engine and GC."
+        }
+    },
+
+    // Custom Tech Stack LOC / Experience Distribution (Sorted automatically)
+    techStackDistribution: [
+        { language: "C++", percentage: 55.0, note: "450K+ LOC (Uranium VM, JIT, DevNotes)" },
+        { language: "C", percentage: 25.0, note: "Bolt GUI, OMake Build System" },
+        { language: "C#", percentage: 20.0, note: "OpenDock WinUI, Lively" }
+    ],
+
     // Social / Contact Links
     links: {
         github: "https://github.com/bruhgit"
