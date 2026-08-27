@@ -2,7 +2,7 @@
 
 A sleek, dark-themed developer portfolio and open-source project repository hub built with pure vanilla web technologies and styled with **JetBrains Mono**.
 
-🌐 **Live Site:** [https://bruhgit.github.io/omerdev/](https://bruhgit.github.io/omerdev/)
+🌐 **Live Site:** [https://bruhgit.github.io/](https://bruhgit.github.io/)
 
 ---
 

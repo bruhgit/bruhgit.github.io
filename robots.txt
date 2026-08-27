@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://bruhgit.github.io/omerdev/sitemap.xml
+Sitemap: https://bruhgit.github.io/sitemap.xml
