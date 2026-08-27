@@ -160,15 +160,22 @@ async function fetchRepositories() {
         
         // Filter out excluded repos, website repo, profile repo
         State.repositories = data.filter(repo => {
-            const name = (repo.name || '').toLowerCase();
-            const isExcluded = excluded.includes(name) || name.endsWith('.github.io') || name === CONFIG.githubUsername.toLowerCase();
+            const name = (repo.name || '').toLowerCase().trim();
+            const fullName = (repo.full_name || '').toLowerCase().trim();
+            const isExcluded = 
+                excluded.includes(name) || 
+                name.includes('.github.io') || 
+                fullName.includes('.github.io') ||
+                name === CONFIG.githubUsername.toLowerCase() ||
+                name === 'omerdev' ||
+                name === 'bruhgit';
             return !isExcluded;
         });
     } catch (err) {
         console.warn('Using fallback repositories:', err);
         State.repositories = CONFIG.fallbackRepos.filter(repo => {
-            const name = (repo.name || '').toLowerCase();
-            return !excluded.includes(name) && !name.endsWith('.github.io');
+            const name = (repo.name || '').toLowerCase().trim();
+            return !excluded.includes(name) && !name.includes('.github.io') && name !== 'bruhgit';
         });
     }
 
