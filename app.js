@@ -158,14 +158,18 @@ async function fetchRepositories() {
         if (!response.ok) throw new Error('Repo fetch failed (Rate Limit or Network)');
         const data = await response.json();
         
-        // Filter out excluded repos and non-important forks
+        // Filter out excluded repos, website repo, profile repo
         State.repositories = data.filter(repo => {
-            const isExcluded = excluded.includes(repo.name.toLowerCase());
+            const name = (repo.name || '').toLowerCase();
+            const isExcluded = excluded.includes(name) || name.endsWith('.github.io') || name === CONFIG.githubUsername.toLowerCase();
             return !isExcluded;
         });
     } catch (err) {
         console.warn('Using fallback repositories:', err);
-        State.repositories = CONFIG.fallbackRepos.filter(repo => !excluded.includes(repo.name.toLowerCase()));
+        State.repositories = CONFIG.fallbackRepos.filter(repo => {
+            const name = (repo.name || '').toLowerCase();
+            return !excluded.includes(name) && !name.endsWith('.github.io');
+        });
     }
 
     State.filteredRepositories = [...State.repositories];
@@ -211,6 +215,14 @@ function renderStatsAndLanguageBar() {
         }
     });
 
+    // Sort languages descending (büyükten küçüğe sırala)
+    const sortedLangEntries = Object.entries(langCounts).sort((a, b) => {
+        if (b[1] !== a[1]) {
+            return b[1] - a[1];
+        }
+        return a[0].localeCompare(b[0]);
+    });
+
     // Render Stats Cards
     if (statsContainer) {
         statsContainer.innerHTML = `
@@ -219,7 +231,7 @@ function renderStatsAndLanguageBar() {
                 <span class="stat-label">Public Projects</span>
             </div>
             <div class="stat-card">
-                <span class="stat-number">${Object.keys(langCounts).length}</span>
+                <span class="stat-number">${sortedLangEntries.length}</span>
                 <span class="stat-label">Core Languages</span>
             </div>
             <div class="stat-card">
@@ -233,18 +245,18 @@ function renderStatsAndLanguageBar() {
         `;
     }
 
-    // Render Language Bar
+    // Render Language Bar (Sorted descending)
     if (barContainer && legendContainer) {
-        const totalWithLang = Object.values(langCounts).reduce((a, b) => a + b, 0);
+        const totalWithLang = sortedLangEntries.reduce((acc, curr) => acc + curr[1], 0);
         
         if (totalWithLang > 0) {
-            barContainer.innerHTML = Object.entries(langCounts).map(([lang, count]) => {
+            barContainer.innerHTML = sortedLangEntries.map(([lang, count]) => {
                 const percent = ((count / totalWithLang) * 100).toFixed(1);
                 const color = LANGUAGE_COLORS[lang] || '#6c757d';
-                return `<div class="lang-segment" style="width: ${percent}%; background-color: ${color};" title="${lang}: ${percent}%"></div>`;
+                return `<div class="lang-segment" style="width: ${percent}%; background-color: ${color};" title="${lang}: ${percent}% (${count} projects)"></div>`;
             }).join('');
 
-            legendContainer.innerHTML = Object.entries(langCounts).map(([lang, count]) => {
+            legendContainer.innerHTML = sortedLangEntries.map(([lang, count]) => {
                 const percent = ((count / totalWithLang) * 100).toFixed(1);
                 const color = LANGUAGE_COLORS[lang] || '#6c757d';
                 return `
