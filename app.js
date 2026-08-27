@@ -640,12 +640,36 @@ window.formatCode = function() {
 
     try {
         if (currentFormatterLang === 'json') {
-            const parsed = JSON.parse(code);
-            formatted = JSON.stringify(parsed, null, indentStr);
+            try {
+                const parsed = JSON.parse(code);
+                formatted = JSON.stringify(parsed, null, indentStr);
+            } catch (jsonErr) {
+                if (typeof js_beautify !== 'undefined') {
+                    formatted = js_beautify(code, {
+                        indent_size: indentSizeVal === 'tab' ? 1 : parseInt(indentSizeVal, 10) || 4,
+                        indent_with_tabs: indentSizeVal === 'tab'
+                    });
+                } else {
+                    throw jsonErr;
+                }
+            }
+        } else if (currentFormatterLang === 'javascript') {
+            if (typeof js_beautify !== 'undefined') {
+                formatted = js_beautify(code, {
+                    indent_size: indentSizeVal === 'tab' ? 1 : parseInt(indentSizeVal, 10) || 4,
+                    indent_with_tabs: indentSizeVal === 'tab',
+                    brace_style: braceStyle === 'allman' ? 'expand' : 'collapse',
+                    space_in_empty_paren: true,
+                    space_after_anon_function: true,
+                    end_with_newline: true
+                });
+            } else {
+                formatted = formatCppStyle(code, indentStr, braceStyle, { optOpSpacing, optCommaSpacing, optTrimTrailing });
+            }
         } else if (currentFormatterLang === 'python') {
             formatted = formatPython(code, indentStr, { optOpSpacing, optCommaSpacing, optTrimTrailing });
         } else {
-            // C, C++, C#, JavaScript
+            // C, C++, C#
             formatted = formatCppStyle(code, indentStr, braceStyle, { optOpSpacing, optCommaSpacing, optTrimTrailing });
         }
     } catch (err) {
