@@ -1,0 +1,29 @@
+{
+  "name": "omerdev // developer hub",
+  "short_name": "omerdev",
+  "description": "Personal developer portfolio, code tools & open-source projects by omerdev (bruhgit).",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://github.com/bruhgit.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://github.com/bruhgit.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "developer",
+    "utilities",
+    "productivity"
+  ]
+}

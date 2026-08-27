@@ -1,4 +1,9 @@
+# robots.txt for omerdev (https://bruhgit.github.io)
 User-agent: *
 Allow: /
 
+# Sitemaps and Web Standards
 Sitemap: https://bruhgit.github.io/sitemap.xml
+Humans: https://bruhgit.github.io/humans.txt
+Security: https://bruhgit.github.io/.well-known/security.txt
+AI-Policy: https://bruhgit.github.io/ai.txt

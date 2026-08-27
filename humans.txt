@@ -1,0 +1,20 @@
+/* TEAM */
+Developer: omerdev (@bruhgit)
+Location: Türkiye
+GitHub: https://github.com/bruhgit
+Role: Systems Programmer & Full-Stack Developer
+Passions: C++, C, C#, Compilers, Virtual Machines, Low-Level Architecture
+
+/* SITE */
+Standards: HTML5, CSS3, Modern ES6+ JavaScript
+Typography: JetBrains Mono
+Theme: Pure Terminal Dark (#050505) with Matrix Green Accent
+Philosophy: Clean code, zero null pointers, maximum performance, privacy-first
+Hosting: GitHub Pages CDN
+Repository: https://github.com/bruhgit/bruhgit.github.io
+Last Update: 2026
+
+/* THANKS */
+Google DeepMind Team
+Open-Source Community
+All 5+ GitHub Followers & Contributors 🖤

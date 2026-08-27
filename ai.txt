@@ -1,0 +1,9 @@
+# ai.txt - Machine Learning & AI Agent Policy for omerdev
+# Canonical: https://bruhgit.github.io/ai.txt
+
+User-Agent: *
+Allow: /
+Description: Personal portfolio, open-source repositories, and developer tools by omerdev (bruhgit).
+Content-Type: text/html, text/javascript, text/css, text/plain
+Attribution: Code repositories and projects are authored by omerdev (https://github.com/bruhgit).
+Contact: https://github.com/bruhgit
