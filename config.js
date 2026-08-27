@@ -31,7 +31,7 @@ const CONFIG = {
         github: "https://github.com/bruhgit"
     },
 
-    // Skills & Badges for Home tab
+    // Skills for Hero
     skills: [
         { name: "C++", color: "#00599C" },
         { name: "C", color: "#A8B9CC" },
@@ -39,6 +39,84 @@ const CONFIG = {
         { name: "Vulkan", color: "#AC162C" },
         { name: "CMake", color: "#064F8C" },
         { name: "SDL3", color: "#1774A5" }
+    ],
+
+    // Developer Achievements & Badges (GitHub Official + Custom Elite Systems Badges)
+    badges: [
+        // Custom Elite Badges
+        {
+            id: "vm-architect",
+            title: "VM & Compiler Architect",
+            subtitle: "450K+ LOC Uranium Engine",
+            category: "custom",
+            icon: "🧬",
+            color: "#f34b7d",
+            description: "Architect of 450,000+ line C++ Uranium Virtual Machine, Bytecode compiler & JIT Engine."
+        },
+        {
+            id: "zero-null",
+            title: "Zero Null Pointer Zealot",
+            subtitle: "Memory Safety & RAII",
+            category: "custom",
+            icon: "🛡️",
+            color: "#00ff9d",
+            description: "Eliminating null dereferencing, ensuring crash-free native execution."
+        },
+        {
+            id: "native-systems",
+            title: "Low-Level Native Craftsman",
+            subtitle: "C++23 / C / Assembly",
+            category: "custom",
+            icon: "⚡",
+            color: "#00d2ff",
+            description: "High-performance systems programming, CPU cache locality, and hardware-near design."
+        },
+        {
+            id: "sdl3-pioneer",
+            title: "SDL3 & Graphics Crafter",
+            subtitle: "Bolt Engine & Vulkan",
+            category: "custom",
+            icon: "🎮",
+            color: "#ffb86c",
+            description: "Hardware accelerated desktop UI architecture & render pipelines."
+        },
+        // GitHub Achievements
+        {
+            id: "github-verified",
+            title: "GitHub Developer",
+            subtitle: "Verified Open-Source Author",
+            category: "github",
+            icon: "🐙",
+            color: "#bd93f9",
+            description: "Active open-source developer maintaining public projects and libraries on GitHub."
+        },
+        {
+            id: "pull-shark",
+            title: "Pull Shark",
+            subtitle: "GitHub Achievement",
+            category: "github",
+            icon: "🦈",
+            color: "#50fa7b",
+            description: "Merged pull requests and contributed to open software repositories."
+        },
+        {
+            id: "code-vault",
+            title: "Arctic Code Vault",
+            subtitle: "GitHub Archive Program",
+            category: "github",
+            icon: "❄️",
+            color: "#8be9fd",
+            description: "Code preserved for future generations in the Arctic World Archive."
+        },
+        {
+            id: "quickdraw",
+            title: "Quickdraw Committer",
+            subtitle: "Rapid Response & Deploy",
+            category: "github",
+            icon: "⚡",
+            color: "#ff5555",
+            description: "Fast code shipper and responsive open-source project maintainer."
+        }
     ],
 
     // Fallback data in case GitHub API rate limit is reached

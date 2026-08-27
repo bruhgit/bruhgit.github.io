@@ -52,7 +52,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.9/beautifier.min.js"></script>
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="styles.css?v=2.4">
+    <link rel="stylesheet" href="styles.css?v=2.5">
 </head>
 <body>
     <div class="bg-grid"></div>
@@ -367,6 +367,17 @@
                         </div>
                     </div>
 
+                    <!-- Achievements & Badges Showcase -->
+                    <div class="badges-section">
+                        <div class="section-header" style="margin-bottom: 1rem;">
+                            <h3 class="section-title">Achievements &amp; Badges</h3>
+                            <span class="filter-badge">GitHub Verified &amp; Systems Badges</span>
+                        </div>
+                        <div class="badges-grid" id="about-badges-container">
+                            <!-- Populated dynamically by app.js from config.js -->
+                        </div>
+                    </div>
+
                     <!-- Dynamic Rendered Markdown Container -->
                     <div class="markdown-container" id="about-readme-content">
                         <div class="loading-container">
@@ -395,7 +406,7 @@
     <div id="app-toast" class="toast-notification"></div>
 
     <!-- Scripts -->
-    <script src="config.js?v=2.2"></script>
-    <script src="app.js?v=2.2"></script>
+    <script src="config.js?v=2.5"></script>
+    <script src="app.js?v=2.5"></script>
 </body>
 </html>

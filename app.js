@@ -43,7 +43,20 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSearch();
     setupKeyboardShortcuts();
     setupFormatterEvents();
+    registerServiceWorker();
 });
+
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                console.log('PWA Service Worker registered successfully:', reg.scope);
+            }).catch(err => {
+                console.warn('PWA Service Worker registration skipped:', err);
+            });
+        });
+    }
+}
 
 /* ==========================================================================
    Navigation & Routing
@@ -110,6 +123,7 @@ function switchTab(tabId, updateHash = true) {
 
 async function initData() {
     renderSkills();
+    renderBadges();
     await Promise.all([
         fetchUserData(),
         fetchRepositories()
@@ -242,6 +256,25 @@ function renderSkills() {
         <span class="tech-badge" style="border-left: 3px solid ${skill.color}">
             ${skill.name}
         </span>
+    `).join('');
+}
+
+function renderBadges() {
+    const container = document.getElementById('about-badges-container');
+    if (!container || !CONFIG.badges) return;
+
+    container.innerHTML = CONFIG.badges.map(badge => `
+        <div class="badge-card ${badge.category === 'github' ? 'github-badge' : 'custom-badge'}" style="--badge-accent: ${badge.color};">
+            <div class="badge-icon-box">${badge.icon}</div>
+            <div class="badge-details">
+                <div class="badge-top-row">
+                    <span class="badge-title">${badge.title}</span>
+                    <span class="badge-category-tag">${badge.category === 'github' ? 'GitHub' : 'Specialist'}</span>
+                </div>
+                <span class="badge-subtitle">${badge.subtitle}</span>
+                <p class="badge-desc">${badge.description}</p>
+            </div>
+        </div>
     `).join('');
 }
 
