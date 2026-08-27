@@ -22,7 +22,7 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="styles.css?v=2.0">
+    <link rel="stylesheet" href="styles.css?v=2.1">
 </head>
 <body>
     <div class="bg-grid"></div>
@@ -154,43 +154,51 @@
                 </div>
 
                 <div class="tools-grid">
-                    <!-- Tool 1: Universal Whitespace Cleaner -->
+                    <!-- Tool 1: Universal Code Whitespace & Syntax Cleaner -->
                     <div class="tool-card full-width">
                         <div class="tool-header">
                             <div class="tool-title-group">
                                 <span class="tool-icon">🧹</span>
                                 <div>
-                                    <h3 class="tool-title">Universal Whitespace & Unicode Space Normalizer</h3>
-                                    <p class="tool-desc">Fixes, normalizes, and strips all exotic Unicode whitespaces (NBSP, Zero-Width, En/Em, Fullwidth, Ideographic, Thin, Hair) across any language and codebase.</p>
+                                    <h3 class="tool-title">Code Whitespace & Invisible Character Cleaner</h3>
+                                    <p class="tool-desc">Language-aware whitespace fixer for <strong>Python, C, C++, C#, Rust, Go, JS</strong>. Eliminates compiler errors (<code>stray '\342'</code>, <code>invalid character U+200B</code>, <code>TabError</code>), fixes mixed tabs/spaces, and normalizes all Unicode spaces.</p>
                                 </div>
+                            </div>
+
+                            <!-- Language Preset Chips -->
+                            <div class="code-lang-selector" id="cleaner-lang-presets">
+                                <button class="chip-btn active" data-lang="python" onclick="setCleanerLanguage('python')">🐍 Python</button>
+                                <button class="chip-btn" data-lang="cpp" onclick="setCleanerLanguage('cpp')">⚡ C / C++</button>
+                                <button class="chip-btn" data-lang="csharp" onclick="setCleanerLanguage('csharp')">🔷 C#</button>
+                                <button class="chip-btn" data-lang="general" onclick="setCleanerLanguage('general')">🌐 General Code</button>
                             </div>
                         </div>
 
                         <!-- Tool Options -->
                         <div class="tool-options-bar">
                             <label class="toggle-option">
-                                <input type="checkbox" id="opt-unicode-spaces" checked>
-                                <span>Normalize Unicode Spaces to ASCII Space</span>
-                            </label>
-                            <label class="toggle-option">
                                 <input type="checkbox" id="opt-zero-width" checked>
-                                <span>Strip Zero-Width & Invisible Chars</span>
+                                <span>Strip Zero-Width &amp; Invisible Characters (<code class="mini-code">U+200B</code>, <code class="mini-code">BOM</code>)</span>
                             </label>
                             <label class="toggle-option">
-                                <input type="checkbox" id="opt-collapse-spaces" checked>
-                                <span>Collapse Multiple Spaces (2+ → 1)</span>
+                                <input type="checkbox" id="opt-unicode-spaces" checked>
+                                <span>Normalize Exotic Unicode Spaces (<code class="mini-code">NBSP</code>, <code class="mini-code">Fullwidth</code> → ASCII Space)</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="checkbox" id="opt-fix-indent" checked>
+                                <span>Fix Inconsistent Tabs/Spaces (Language-Safe Indent)</span>
                             </label>
                             <label class="toggle-option">
                                 <input type="checkbox" id="opt-trim-lines" checked>
-                                <span>Trim Line Ends</span>
+                                <span>Trim Trailing Line Whitespace</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="checkbox" id="opt-collapse-internal-spaces">
+                                <span>Collapse Multiple Mid-Line Spaces</span>
                             </label>
                             <label class="toggle-option">
                                 <input type="checkbox" id="opt-remove-blank-lines">
-                                <span>Remove Extra Blank Lines</span>
-                            </label>
-                            <label class="toggle-option">
-                                <input type="checkbox" id="opt-tabs-to-spaces">
-                                <span>Convert Tabs to 4 Spaces</span>
+                                <span>Remove Consecutive Blank Lines (Max 1)</span>
                             </label>
                         </div>
 
@@ -198,28 +206,31 @@
                         <div class="tool-editor-grid">
                             <div class="editor-pane">
                                 <div class="pane-header">
-                                    <span>INPUT (Dirty Text)</span>
-                                    <button class="btn btn-secondary btn-sm" onclick="loadSampleWhitespaceText()">🧪 Load Sample</button>
+                                    <span>INPUT (Source Code / Dirty Text)</span>
+                                    <div class="pane-actions">
+                                        <button class="btn btn-secondary btn-sm" onclick="loadSampleCode('python')">🐍 Python Sample</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="loadSampleCode('cpp')">⚡ C++ Sample</button>
+                                    </div>
                                 </div>
-                                <textarea id="whitespace-input" class="tool-textarea" placeholder="Paste your dirty text, code, or Unicode string here..."></textarea>
+                                <textarea id="whitespace-input" class="tool-textarea" placeholder="Paste your C, C++, Python, C# or any source code here..."></textarea>
                             </div>
 
                             <div class="editor-pane">
                                 <div class="pane-header">
-                                    <span>OUTPUT (Cleaned Text)</span>
-                                    <button class="btn btn-primary btn-sm" onclick="copyCleanedWhitespace()">📋 Copy Output</button>
+                                    <span>OUTPUT (Clean &amp; Compiler-Safe Code)</span>
+                                    <button class="btn btn-primary btn-sm" onclick="copyCleanedWhitespace()">📋 Copy Clean Code</button>
                                 </div>
-                                <textarea id="whitespace-output" class="tool-textarea" placeholder="Cleaned text will appear here automatically..." readonly></textarea>
+                                <textarea id="whitespace-output" class="tool-textarea" placeholder="Cleaned, indentation-safe code will appear here automatically..." readonly></textarea>
                             </div>
                         </div>
 
                         <!-- Tool Stats Footer -->
                         <div class="tool-footer">
                             <div class="tool-stats-summary" id="whitespace-stats">
-                                <span class="stat-pill">✨ Ready to clean</span>
+                                <span class="stat-pill">✨ Ready to clean source code</span>
                             </div>
                             <div class="tool-actions-row">
-                                <button class="btn btn-primary" onclick="cleanWhitespace()">⚡ Clean Whitespace</button>
+                                <button class="btn btn-primary" onclick="cleanWhitespace()">⚡ Clean &amp; Format Code</button>
                                 <button class="btn btn-secondary" onclick="clearWhitespaceTool()">🔄 Clear</button>
                             </div>
                         </div>
@@ -342,7 +353,7 @@
     <div id="app-toast" class="toast-notification"></div>
 
     <!-- Scripts -->
-    <script src="config.js?v=2.0"></script>
-    <script src="app.js?v=2.0"></script>
+    <script src="config.js?v=2.1"></script>
+    <script src="app.js?v=2.1"></script>
 </body>
 </html>

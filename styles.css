@@ -834,9 +834,31 @@ a:hover {
 .tool-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     border-bottom: 1px solid var(--border-dim);
     padding-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.code-lang-selector {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.pane-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.mini-code {
+    background: #050608;
+    color: var(--accent-orange);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    border: 1px solid var(--border-dim);
 }
 
 .tool-title-group {

@@ -574,7 +574,9 @@ function showToast(message) {
    Developer Tools Implementation
    ========================================================================== */
 
-// 1. Universal Whitespace Cleaner
+// 1. Language-Aware Code Whitespace Cleaner
+let currentCleanerLang = 'python';
+
 function setupWhitespaceLiveEvents() {
     const input = document.getElementById('whitespace-input');
     if (input) {
@@ -591,6 +593,32 @@ function setupWhitespaceLiveEvents() {
     });
 }
 
+window.setCleanerLanguage = function(lang) {
+    currentCleanerLang = lang;
+    
+    document.querySelectorAll('#cleaner-lang-presets .chip-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    const optFixIndent = document.getElementById('opt-fix-indent');
+    const optCollapse = document.getElementById('opt-collapse-internal-spaces');
+
+    if (lang === 'python') {
+        if (optFixIndent) optFixIndent.checked = true;
+        if (optCollapse) optCollapse.checked = false; // Python forbids mid-line indentation collapsing
+    } else if (lang === 'cpp' || lang === 'csharp') {
+        if (optFixIndent) optFixIndent.checked = true;
+        if (optCollapse) optCollapse.checked = false;
+    }
+
+    cleanWhitespace();
+    showToast(`> Mode set: ${lang.toUpperCase()}`);
+};
+
 window.cleanWhitespace = function() {
     const inputEl = document.getElementById('whitespace-input');
     const outputEl = document.getElementById('whitespace-output');
@@ -600,22 +628,23 @@ window.cleanWhitespace = function() {
     let text = inputEl.value;
     if (!text) {
         outputEl.value = '';
-        if (statsEl) statsEl.innerHTML = '<span class="stat-pill">✨ Ready to clean</span>';
+        if (statsEl) statsEl.innerHTML = '<span class="stat-pill">✨ Ready to clean source code</span>';
         return;
     }
 
     const origBytes = new Blob([text]).size;
     let invisibleRemoved = 0;
     let unicodeNormalized = 0;
+    let indentLinesFixed = 0;
 
-    const optUnicodeSpaces = document.getElementById('opt-unicode-spaces')?.checked ?? true;
     const optZeroWidth = document.getElementById('opt-zero-width')?.checked ?? true;
-    const optCollapseSpaces = document.getElementById('opt-collapse-spaces')?.checked ?? true;
+    const optUnicodeSpaces = document.getElementById('opt-unicode-spaces')?.checked ?? true;
+    const optFixIndent = document.getElementById('opt-fix-indent')?.checked ?? true;
     const optTrimLines = document.getElementById('opt-trim-lines')?.checked ?? true;
+    const optCollapseInternal = document.getElementById('opt-collapse-internal-spaces')?.checked ?? false;
     const optRemoveBlank = document.getElementById('opt-remove-blank-lines')?.checked ?? false;
-    const optTabsToSpaces = document.getElementById('opt-tabs-to-spaces')?.checked ?? false;
 
-    // 1. Strip Zero-Width & Invisible Characters
+    // 1. Strip Zero-Width & Invisible Characters (U+200B, U+200C, U+200D, U+FEFF, U+00AD, etc.)
     if (optZeroWidth) {
         const zeroWidthRegex = /[\u200B\u200C\u200D\uFEFF\u00AD\u200E\u200F\u202A-\u202E\u2060-\u2064\uFFF0-\uFFFF]/g;
         const matches = text.match(zeroWidthRegex);
@@ -635,31 +664,58 @@ window.cleanWhitespace = function() {
         text = text.replace(unicodeSpacesRegex, ' ');
     }
 
-    // 3. Convert Tabs to Spaces
-    if (optTabsToSpaces) {
-        text = text.replace(/\t/g, '    ');
-    }
-
-    // 4. Line by line trimming and blank line handling
+    // 3. Line-by-line language-aware indentation & trailing whitespace processing
     let lines = text.split(/\r?\n/);
+    let cleanedLines = [];
+    let consecutiveBlankCount = 0;
 
-    if (optTrimLines) {
-        lines = lines.map(line => line.trimEnd());
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+
+        // Check if blank
+        if (line.trim() === '') {
+            if (optRemoveBlank) {
+                consecutiveBlankCount++;
+                if (consecutiveBlankCount > 1) {
+                    continue; // Skip excess blank lines
+                }
+            }
+            cleanedLines.push('');
+            continue;
+        }
+        consecutiveBlankCount = 0;
+
+        // Separate leading indent from code body
+        const indentMatch = line.match(/^([ \t]+)/);
+        let leadingIndent = indentMatch ? indentMatch[1] : '';
+        let codeBody = line.substring(leadingIndent.length);
+
+        // Language-safe indentation normalization
+        if (optFixIndent && leadingIndent) {
+            const originalIndent = leadingIndent;
+            if (leadingIndent.includes('\t')) {
+                // Convert tabs to 4 spaces
+                leadingIndent = leadingIndent.replace(/\t/g, '    ');
+            }
+            if (originalIndent !== leadingIndent) {
+                indentLinesFixed++;
+            }
+        }
+
+        // Mid-line multiple spaces collapsing (outside of string literals if possible)
+        if (optCollapseInternal) {
+            codeBody = codeBody.replace(/[^\S\r\n]{2,}/g, ' ');
+        }
+
+        // Trailing whitespace trimming
+        if (optTrimLines) {
+            codeBody = codeBody.trimEnd();
+        }
+
+        cleanedLines.push(leadingIndent + codeBody);
     }
 
-    if (optCollapseSpaces) {
-        lines = lines.map(line => line.replace(/[^\S\r\n]{2,}/g, ' '));
-    }
-
-    if (optRemoveBlank) {
-        lines = lines.filter((line, idx, arr) => {
-            if (line.trim() !== '') return true;
-            // Allow single blank line between paragraphs if desired, or remove completely
-            return false;
-        });
-    }
-
-    text = lines.join('\n');
+    text = cleanedLines.join('\n');
     outputEl.value = text;
 
     const cleanedBytes = new Blob([text]).size;
@@ -667,8 +723,9 @@ window.cleanWhitespace = function() {
 
     if (statsEl) {
         statsEl.innerHTML = `
-            <span class="stat-pill">🧹 Invisible Removed: <strong>${invisibleRemoved}</strong></span>
-            <span class="stat-pill">🔄 Spaces Normalized: <strong>${unicodeNormalized}</strong></span>
+            <span class="stat-pill">🧹 Invisible Stripped: <strong>${invisibleRemoved}</strong></span>
+            <span class="stat-pill">🔄 Unicode Normalized: <strong>${unicodeNormalized}</strong></span>
+            <span class="stat-pill">📐 Indent Fixed: <strong>${indentLinesFixed} lines</strong></span>
             <span class="stat-pill">📦 Size: <strong>${origBytes}B → ${cleanedBytes}B</strong> (${bytesSaved}B saved)</span>
         `;
     }
@@ -677,11 +734,11 @@ window.cleanWhitespace = function() {
 window.copyCleanedWhitespace = function() {
     const outputEl = document.getElementById('whitespace-output');
     if (!outputEl || !outputEl.value) {
-        showToast('> No cleaned text to copy!');
+        showToast('> No cleaned code to copy!');
         return;
     }
     navigator.clipboard.writeText(outputEl.value).then(() => {
-        showToast('> Cleaned text copied to clipboard!');
+        showToast('> Cleaned code copied to clipboard!');
     });
 };
 
@@ -691,18 +748,24 @@ window.clearWhitespaceTool = function() {
     const stats = document.getElementById('whitespace-stats');
     if (input) input.value = '';
     if (output) output.value = '';
-    if (stats) stats.innerHTML = '<span class="stat-pill">✨ Ready to clean</span>';
+    if (stats) stats.innerHTML = '<span class="stat-pill">✨ Ready to clean source code</span>';
     showToast('> Cleared workspace');
 };
 
-window.loadSampleWhitespaceText = function() {
+window.loadSampleCode = function(lang) {
     const input = document.getElementById('whitespace-input');
     if (!input) return;
 
-    // A sample text containing Non-Breaking spaces (\u00A0), Zero-width spaces (\u200B), Ideographic fullwidth spaces (\u3000), multiple spaces, and trailing whitespace
-    input.value = `// C++ Kernel\u00A0Module\u00A0Definition\nint\u3000main()  {   \n    // Hidden zero-width\u200B\u200C chars and exotic\u2002spaces\u2003here!\n    void*   ptr   =   nullptr;    \n    \n    \n    return  0;\n}`;
+    if (lang === 'python') {
+        setCleanerLanguage('python');
+        input.value = `# Python 3.12 Deep Learning / Math Module\n# Notice the dirty mixed tabs, zero-width char \u200B, and NBSP \u00A0 below:\n\ndef calculate_entropy(data_distribution):\n\t"""Computes\u00A0entropy\u00A0value."""\n\t\u200Bif not data_distribution:\n\t    return 0.0    \n\t\n\t\n\ttotal_sum = sum(data_distribution)    \n\treturn sum(p * p for p in data_distribution)   \n`;
+    } else if (lang === 'cpp') {
+        setCleanerLanguage('cpp');
+        input.value = `// Uranium Virtual Machine & JIT Engine [C++20]\n// Contains non-breaking spaces \u00A0, zero-width joiners \u200C, and trailing spaces:\n\n#include <iostream>\u00A0\n#include <vector>\n\nclass UraniumVM {\npublic:\n\tvoid\u00A0ExecuteBytecode(const\u3000uint8_t*\u200B code, size_t len) {\n\t    if (code == nullptr) return;    \n\t    \n\t    for (size_t i = 0; i < len; ++i) {   \n\t    \t// Instruction dispatch\u200C loop\n\t    \tProcessOpcode(code[i]);    \n\t    }   \n\t}   \n};`;
+    }
+
     cleanWhitespace();
-    showToast('> Loaded sample with dirty Unicode whitespace!');
+    showToast(`> Loaded sample dirty ${lang.toUpperCase()} code!`);
 };
 
 // 2. Radix Inspector Implementation
