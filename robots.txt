@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bruhgit.github.io/omerdev/sitemap.xml
