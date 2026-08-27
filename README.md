@@ -13,9 +13,12 @@ A sleek, dark-themed developer portfolio and open-source project repository hub 
 - 🧭 **Navigation**:
   - `Home`: Developer profile hero, core systems programming skills (C++, C, C#, Vulkan, CMake, SDL3), project statistics, and language distribution metrics.
   - `Downloads`: Live repository browser fetching directly from the GitHub API with **One-Click ZIP Downloads**, `git clone` command copying, and real-time search & language filter chips.
-  - `About`: Live rendering of the profile `README.md` with GitHub Markdown styling.
-- 🛡️ **Zero Dependencies**: Pure HTML5, CSS3, and modern JavaScript with no build step required.
-- 🚀 **GitHub Pages Ready**: Optimized for instant static hosting.
+  - `Tools`: In-browser developer suite featuring Multi-Language Code Beautifier (C, C++, Python, C#, JS, JSON), Radix / Byte Inspector, and String Escaper.
+  - `About`: Live rendering of the profile `README.md`, dynamic live GitHub stats, and custom achievement badges.
+- 📱 **Progressive Web App (PWA)**: Full offline support with Service Worker (`sw.js`) and installable desktop/mobile experience.
+- 🛡️ **Web Standards**: RFC 9116 `security.txt`, `humans.txt`, `ai.txt`, OpenGraph metadata, and W3C webmanifest.
+- 🚀 **Zero Dependencies**: Pure HTML5, CSS3, and modern JavaScript with no build step required.
+- ⚡ **GitHub Pages Ready**: Optimized for instant static hosting.
 
 ---
 
@@ -26,7 +29,11 @@ omerdev/
 ├── index.html       # Main application layout and tab structure
 ├── styles.css       # JetBrains Mono styling, dark theme, animations
 ├── config.js        # Site metadata, skills, and fallback data
-├── app.js           # GitHub API integration, tab routing, zip downloads
+├── app.js           # GitHub API integration, tab routing, tools suite
+├── sw.js            # PWA Service Worker for offline caching
+├── site.webmanifest # PWA application manifest
+├── humans.txt       # Authorship and credits
+├── ai.txt           # AI agent indexing policy
 ├── robots.txt       # Search engine crawler configuration
 ├── sitemap.xml      # SEO sitemap
 └── 404.html         # Custom 404 error page
