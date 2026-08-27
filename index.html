@@ -22,7 +22,7 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="styles.css?v=1.6">
+    <link rel="stylesheet" href="styles.css?v=2.0">
 </head>
 <body>
     <div class="bg-grid"></div>
@@ -35,7 +35,7 @@
                     <span class="prompt-symbol">&gt;</span>omerdev<span class="cursor"></span>
                 </a>
 
-                <!-- Navigation Bar: Home | Downloads | About -->
+                <!-- Navigation Bar: Home | Downloads | Tools | About -->
                 <nav>
                     <ul class="nav-menu">
                         <li class="nav-item">
@@ -44,6 +44,10 @@
                         <li class="nav-divider">|</li>
                         <li class="nav-item">
                             <a href="#downloads" class="nav-link" data-tab="downloads">Downloads</a>
+                        </li>
+                        <li class="nav-divider">|</li>
+                        <li class="nav-item">
+                            <a href="#tools" class="nav-link" data-tab="tools">Tools</a>
                         </li>
                         <li class="nav-divider">|</li>
                         <li class="nav-item">
@@ -82,11 +86,11 @@
                                 <a href="#downloads" class="btn btn-primary" onclick="switchTab('downloads')">
                                     📦 Browse & Download Repos
                                 </a>
+                                <a href="#tools" class="btn btn-secondary" onclick="switchTab('tools')">
+                                    🛠️ Developer Tools
+                                </a>
                                 <a href="#about" class="btn btn-secondary" onclick="switchTab('about')">
                                     📄 Read Profile README
-                                </a>
-                                <a href="https://github.com/bruhgit" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
-                                    GitHub Profile ↗
                                 </a>
                             </div>
                         </div>
@@ -142,16 +146,171 @@
                 </div>
             </section>
 
+            <!-- ================= TOOLS TAB ================= -->
+            <section id="tab-tools" class="tab-content">
+                <div class="section-header">
+                    <h2 class="section-title">Developer Utilities & Tools</h2>
+                    <span class="filter-badge">Offline & Client-Side</span>
+                </div>
+
+                <div class="tools-grid">
+                    <!-- Tool 1: Universal Whitespace Cleaner -->
+                    <div class="tool-card full-width">
+                        <div class="tool-header">
+                            <div class="tool-title-group">
+                                <span class="tool-icon">🧹</span>
+                                <div>
+                                    <h3 class="tool-title">Universal Whitespace & Unicode Space Normalizer</h3>
+                                    <p class="tool-desc">Fixes, normalizes, and strips all exotic Unicode whitespaces (NBSP, Zero-Width, En/Em, Fullwidth, Ideographic, Thin, Hair) across any language and codebase.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tool Options -->
+                        <div class="tool-options-bar">
+                            <label class="toggle-option">
+                                <input type="checkbox" id="opt-unicode-spaces" checked>
+                                <span>Normalize Unicode Spaces to ASCII Space</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="checkbox" id="opt-zero-width" checked>
+                                <span>Strip Zero-Width & Invisible Chars</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="checkbox" id="opt-collapse-spaces" checked>
+                                <span>Collapse Multiple Spaces (2+ → 1)</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="checkbox" id="opt-trim-lines" checked>
+                                <span>Trim Line Ends</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="checkbox" id="opt-remove-blank-lines">
+                                <span>Remove Extra Blank Lines</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="checkbox" id="opt-tabs-to-spaces">
+                                <span>Convert Tabs to 4 Spaces</span>
+                            </label>
+                        </div>
+
+                        <!-- Textarea Area -->
+                        <div class="tool-editor-grid">
+                            <div class="editor-pane">
+                                <div class="pane-header">
+                                    <span>INPUT (Dirty Text)</span>
+                                    <button class="btn btn-secondary btn-sm" onclick="loadSampleWhitespaceText()">🧪 Load Sample</button>
+                                </div>
+                                <textarea id="whitespace-input" class="tool-textarea" placeholder="Paste your dirty text, code, or Unicode string here..."></textarea>
+                            </div>
+
+                            <div class="editor-pane">
+                                <div class="pane-header">
+                                    <span>OUTPUT (Cleaned Text)</span>
+                                    <button class="btn btn-primary btn-sm" onclick="copyCleanedWhitespace()">📋 Copy Output</button>
+                                </div>
+                                <textarea id="whitespace-output" class="tool-textarea" placeholder="Cleaned text will appear here automatically..." readonly></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Tool Stats Footer -->
+                        <div class="tool-footer">
+                            <div class="tool-stats-summary" id="whitespace-stats">
+                                <span class="stat-pill">✨ Ready to clean</span>
+                            </div>
+                            <div class="tool-actions-row">
+                                <button class="btn btn-primary" onclick="cleanWhitespace()">⚡ Clean Whitespace</button>
+                                <button class="btn btn-secondary" onclick="clearWhitespaceTool()">🔄 Clear</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tool 2: Hex / Binary / Decimal / ASCII Converter -->
+                    <div class="tool-card">
+                        <div class="tool-header">
+                            <div class="tool-title-group">
+                                <span class="tool-icon">🔢</span>
+                                <div>
+                                    <h3 class="tool-title">Radix & Byte Inspector</h3>
+                                    <p class="tool-desc">Instant converter between Decimal, Hexadecimal, Binary, and ASCII.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="radix-form">
+                            <div class="radix-field">
+                                <label>DECIMAL (Base 10)</label>
+                                <input type="text" id="radix-dec" class="tool-input" placeholder="e.g. 255" oninput="convertRadix('dec')">
+                            </div>
+                            <div class="radix-field">
+                                <label>HEXADECIMAL (Base 16)</label>
+                                <input type="text" id="radix-hex" class="tool-input" placeholder="e.g. 0xFF" oninput="convertRadix('hex')">
+                            </div>
+                            <div class="radix-field">
+                                <label>BINARY (Base 2)</label>
+                                <input type="text" id="radix-bin" class="tool-input" placeholder="e.g. 11111111" oninput="convertRadix('bin')">
+                            </div>
+                            <div class="radix-field">
+                                <label>ASCII TEXT</label>
+                                <input type="text" id="radix-ascii" class="tool-input" placeholder="e.g. A" oninput="convertRadix('ascii')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tool 3: C/C++ String Escaper -->
+                    <div class="tool-card">
+                        <div class="tool-header">
+                            <div class="tool-title-group">
+                                <span class="tool-icon">💻</span>
+                                <div>
+                                    <h3 class="tool-title">C / C++ String Escaper</h3>
+                                    <p class="tool-desc">Converts raw text to C escaped string literals or C++11 raw string literals <code>R"(...)"</code>.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="editor-pane" style="margin-bottom: 1rem;">
+                            <textarea id="cpp-escape-input" class="tool-textarea" style="height: 90px;" placeholder="Paste raw text here..." oninput="convertCppString()"></textarea>
+                        </div>
+                        <div class="editor-pane">
+                            <div class="pane-header">
+                                <span>C++ LITERAL</span>
+                                <button class="btn btn-secondary btn-sm" onclick="copyCppOutput()">📋 Copy</button>
+                            </div>
+                            <textarea id="cpp-escape-output" class="tool-textarea" style="height: 90px;" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- ================= ABOUT TAB ================= -->
             <section id="tab-about" class="tab-content">
                 <div class="about-wrapper">
-                    <!-- Profile Header Card -->
+                    <!-- Profile Header Card & Live Stats -->
                     <div class="profile-card">
                         <img class="profile-avatar user-avatar" src="https://github.com/bruhgit.png" alt="Profile Avatar">
                         <div class="profile-info">
                             <h2 class="profile-name user-name">omerdev</h2>
                             <span class="profile-handle user-handle">@bruhgit</span>
                             <p class="profile-bio user-bio">Full-stack developer at heart, systems programmer at soul 🖤</p>
+                        </div>
+
+                        <!-- Live GitHub Metrics -->
+                        <div class="about-stats-container">
+                            <div class="about-stat-item">
+                                <span class="stat-badge-val" id="about-followers-count">5</span>
+                                <span class="stat-badge-key">Followers</span>
+                            </div>
+                            <div class="about-stat-item">
+                                <span class="stat-badge-val" id="about-following-count">2</span>
+                                <span class="stat-badge-key">Following</span>
+                            </div>
+                            <div class="about-stat-item">
+                                <span class="stat-badge-val" id="about-repos-count">8</span>
+                                <span class="stat-badge-key">Public Repos</span>
+                            </div>
+                            <div class="about-stat-item">
+                                <span class="stat-badge-val" id="about-joined-date">2026</span>
+                                <span class="stat-badge-key">GitHub Member</span>
+                            </div>
                         </div>
                     </div>
 
@@ -183,7 +342,7 @@
     <div id="app-toast" class="toast-notification"></div>
 
     <!-- Scripts -->
-    <script src="config.js?v=1.5"></script>
-    <script src="app.js?v=1.5"></script>
+    <script src="config.js?v=2.0"></script>
+    <script src="app.js?v=2.0"></script>
 </body>
 </html>
