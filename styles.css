@@ -887,11 +887,38 @@ a:hover {
 .tool-options-bar {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 0.8rem 1.4rem;
     background: var(--bg-secondary);
     padding: 0.8rem 1rem;
     border-radius: var(--border-radius-sm);
     border: 1px solid var(--border-dim);
+}
+
+.option-select-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.tool-select {
+    background: #08090d;
+    color: var(--text-primary);
+    border: 1px solid var(--border-dim);
+    border-radius: var(--border-radius-sm);
+    padding: 0.3rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    outline: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.tool-select:focus,
+.tool-select:hover {
+    border-color: var(--accent-green);
 }
 
 .toggle-option {
@@ -942,7 +969,7 @@ a:hover {
 
 .tool-textarea {
     width: 100%;
-    height: 180px;
+    height: 220px;
     background: #08090d;
     border: 1px solid var(--border-dim);
     border-radius: var(--border-radius-sm);
@@ -950,10 +977,17 @@ a:hover {
     color: var(--text-primary);
     font-family: var(--font-mono);
     font-size: 0.85rem;
-    line-height: 1.5;
+    line-height: 1.55;
+    tab-size: 4;
     resize: vertical;
     outline: none;
     transition: var(--transition);
+    white-space: pre;
+    overflow-x: auto;
+}
+
+.tool-textarea.code-editor {
+    height: 260px;
 }
 
 .tool-textarea:focus {

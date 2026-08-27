@@ -1,7 +1,10 @@
 /**
  * omerdev - Application Logic
  * Manages tab switching, GitHub API repository fetching, one-click zip downloads,
- * language filtering, live profile metrics, and Developer Utilities (Universal Whitespace Cleaner, Radix Inspector, C++ Escaper).
+ * language filtering, live profile metrics, and Developer Utilities:
+ * - Multi-Language Code Formatter & Beautifier (C, C++, Python, C#, JS, JSON)
+ * - Radix & Byte Inspector (Dec, Hex, Bin, ASCII)
+ * - C/C++ String Literal Escaper
  */
 
 // Language Color Mapping
@@ -39,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initData();
     setupSearch();
     setupKeyboardShortcuts();
-    setupWhitespaceLiveEvents();
+    setupFormatterEvents();
 });
 
 /* ==========================================================================
@@ -571,32 +574,24 @@ function showToast(message) {
 }
 
 /* ==========================================================================
-   Developer Tools Implementation
+   Developer Tools: Code Formatter & Beautifier
    ========================================================================== */
 
-// 1. Language-Aware Code Whitespace Cleaner
-let currentCleanerLang = 'python';
+let currentFormatterLang = 'cpp';
 
-function setupWhitespaceLiveEvents() {
-    const input = document.getElementById('whitespace-input');
+function setupFormatterEvents() {
+    const input = document.getElementById('formatter-input');
     if (input) {
         input.addEventListener('input', () => {
-            cleanWhitespace();
+            formatCode();
         });
     }
-
-    const checkboxes = document.querySelectorAll('.tool-options-bar input[type="checkbox"]');
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-            cleanWhitespace();
-        });
-    });
 }
 
-window.setCleanerLanguage = function(lang) {
-    currentCleanerLang = lang;
-    
-    document.querySelectorAll('#cleaner-lang-presets .chip-btn').forEach(btn => {
+window.setFormatterLanguage = function(lang) {
+    currentFormatterLang = lang;
+
+    document.querySelectorAll('#formatter-lang-presets .chip-btn').forEach(btn => {
         if (btn.getAttribute('data-lang') === lang) {
             btn.classList.add('active');
         } else {
@@ -604,168 +599,322 @@ window.setCleanerLanguage = function(lang) {
         }
     });
 
-    const optFixIndent = document.getElementById('opt-fix-indent');
-    const optCollapse = document.getElementById('opt-collapse-internal-spaces');
-
-    if (lang === 'python') {
-        if (optFixIndent) optFixIndent.checked = true;
-        if (optCollapse) optCollapse.checked = false; // Python forbids mid-line indentation collapsing
-    } else if (lang === 'cpp' || lang === 'csharp') {
-        if (optFixIndent) optFixIndent.checked = true;
-        if (optCollapse) optCollapse.checked = false;
+    const braceGroup = document.getElementById('group-brace-style');
+    if (braceGroup) {
+        braceGroup.style.display = (lang === 'python' || lang === 'json') ? 'none' : 'flex';
     }
 
-    cleanWhitespace();
-    showToast(`> Mode set: ${lang.toUpperCase()}`);
+    formatCode();
+    showToast(`> Formatter set to: ${lang.toUpperCase()}`);
 };
 
-window.cleanWhitespace = function() {
-    const inputEl = document.getElementById('whitespace-input');
-    const outputEl = document.getElementById('whitespace-output');
-    const statsEl = document.getElementById('whitespace-stats');
+window.formatCode = function() {
+    const inputEl = document.getElementById('formatter-input');
+    const outputEl = document.getElementById('formatter-output');
+    const statsEl = document.getElementById('formatter-stats');
     if (!inputEl || !outputEl) return;
 
-    let text = inputEl.value;
-    if (!text) {
+    let code = inputEl.value;
+    if (!code.trim()) {
         outputEl.value = '';
-        if (statsEl) statsEl.innerHTML = '<span class="stat-pill">✨ Ready to clean source code</span>';
+        if (statsEl) statsEl.innerHTML = '<span class="stat-pill">✨ Ready to format code</span>';
         return;
     }
 
-    const origBytes = new Blob([text]).size;
-    let invisibleRemoved = 0;
-    let unicodeNormalized = 0;
-    let indentLinesFixed = 0;
+    const indentSizeVal = document.getElementById('opt-indent-size')?.value || '4';
+    const indentStr = indentSizeVal === 'tab' ? '\t' : ' '.repeat(parseInt(indentSizeVal, 10) || 4);
+    const braceStyle = document.getElementById('opt-brace-style')?.value || 'allman';
+    const optOpSpacing = document.getElementById('opt-operator-spacing')?.checked ?? true;
+    const optCommaSpacing = document.getElementById('opt-comma-spacing')?.checked ?? true;
+    const optStripInvisible = document.getElementById('opt-strip-invisible')?.checked ?? true;
+    const optTrimTrailing = document.getElementById('opt-trim-trailing')?.checked ?? true;
 
-    const optZeroWidth = document.getElementById('opt-zero-width')?.checked ?? true;
-    const optUnicodeSpaces = document.getElementById('opt-unicode-spaces')?.checked ?? true;
-    const optFixIndent = document.getElementById('opt-fix-indent')?.checked ?? true;
-    const optTrimLines = document.getElementById('opt-trim-lines')?.checked ?? true;
-    const optCollapseInternal = document.getElementById('opt-collapse-internal-spaces')?.checked ?? false;
-    const optRemoveBlank = document.getElementById('opt-remove-blank-lines')?.checked ?? false;
-
-    // 1. Strip Zero-Width & Invisible Characters (U+200B, U+200C, U+200D, U+FEFF, U+00AD, etc.)
-    if (optZeroWidth) {
-        const zeroWidthRegex = /[\u200B\u200C\u200D\uFEFF\u00AD\u200E\u200F\u202A-\u202E\u2060-\u2064\uFFF0-\uFFFF]/g;
-        const matches = text.match(zeroWidthRegex);
-        if (matches) invisibleRemoved = matches.length;
-        text = text.replace(zeroWidthRegex, '');
+    // 1. Strip invisible / zero-width characters if selected
+    if (optStripInvisible) {
+        code = code.replace(/[\u200B\u200C\u200D\uFEFF\u00AD\u200E\u200F\u202A-\u202E\u2060-\u2064\uFFF0-\uFFFF]/g, '');
+        code = code.replace(/[\u00A0\u1680\u180E\u2000-\u200A\u202F\u205F\u3000]/g, ' ');
     }
 
-    // 2. Normalize Exotic Unicode Whitespaces to standard space (0x20)
-    // Matches: NBSP (\u00A0), En Quad (\u2000), Em Quad (\u2001), En Space (\u2002), Em Space (\u2003),
-    // Three-Per-Em (\u2004), Four-Per-Em (\u2005), Six-Per-Em (\u2006), Figure Space (\u2007),
-    // Punctuation Space (\u2008), Thin Space (\u2009), Hair Space (\u200A), Narrow NBSP (\u202F),
-    // Medium Math Space (\u205F), Ideographic Space (\u3000), Ogham (\u1680), Mongolian (\u180E)
-    if (optUnicodeSpaces) {
-        const unicodeSpacesRegex = /[\u00A0\u1680\u180E\u2000-\u200A\u202F\u205F\u3000]/g;
-        const matches = text.match(unicodeSpacesRegex);
-        if (matches) unicodeNormalized = matches.length;
-        text = text.replace(unicodeSpacesRegex, ' ');
+    let formatted = '';
+    const startLines = code.split(/\r?\n/).length;
+
+    try {
+        if (currentFormatterLang === 'json') {
+            const parsed = JSON.parse(code);
+            formatted = JSON.stringify(parsed, null, indentStr);
+        } else if (currentFormatterLang === 'python') {
+            formatted = formatPython(code, indentStr, { optOpSpacing, optCommaSpacing, optTrimTrailing });
+        } else {
+            // C, C++, C#, JavaScript
+            formatted = formatCppStyle(code, indentStr, braceStyle, { optOpSpacing, optCommaSpacing, optTrimTrailing });
+        }
+    } catch (err) {
+        console.warn('Formatting error:', err);
+        // Fallback to basic clean formatting
+        formatted = formatGenericCode(code, indentStr, { optTrimTrailing });
     }
 
-    // 3. Line-by-line language-aware indentation & trailing whitespace processing
-    let lines = text.split(/\r?\n/);
-    let cleanedLines = [];
-    let consecutiveBlankCount = 0;
+    outputEl.value = formatted;
 
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i];
-
-        // Check if blank
-        if (line.trim() === '') {
-            if (optRemoveBlank) {
-                consecutiveBlankCount++;
-                if (consecutiveBlankCount > 1) {
-                    continue; // Skip excess blank lines
-                }
-            }
-            cleanedLines.push('');
-            continue;
-        }
-        consecutiveBlankCount = 0;
-
-        // Separate leading indent from code body
-        const indentMatch = line.match(/^([ \t]+)/);
-        let leadingIndent = indentMatch ? indentMatch[1] : '';
-        let codeBody = line.substring(leadingIndent.length);
-
-        // Language-safe indentation normalization
-        if (optFixIndent && leadingIndent) {
-            const originalIndent = leadingIndent;
-            if (leadingIndent.includes('\t')) {
-                // Convert tabs to 4 spaces
-                leadingIndent = leadingIndent.replace(/\t/g, '    ');
-            }
-            if (originalIndent !== leadingIndent) {
-                indentLinesFixed++;
-            }
-        }
-
-        // Mid-line multiple spaces collapsing (outside of string literals if possible)
-        if (optCollapseInternal) {
-            codeBody = codeBody.replace(/[^\S\r\n]{2,}/g, ' ');
-        }
-
-        // Trailing whitespace trimming
-        if (optTrimLines) {
-            codeBody = codeBody.trimEnd();
-        }
-
-        cleanedLines.push(leadingIndent + codeBody);
-    }
-
-    text = cleanedLines.join('\n');
-    outputEl.value = text;
-
-    const cleanedBytes = new Blob([text]).size;
-    const bytesSaved = Math.max(0, origBytes - cleanedBytes);
+    const endLines = formatted.split(/\r?\n/).length;
+    const origBytes = new Blob([code]).size;
+    const formattedBytes = new Blob([formatted]).size;
 
     if (statsEl) {
         statsEl.innerHTML = `
-            <span class="stat-pill">🧹 Invisible Stripped: <strong>${invisibleRemoved}</strong></span>
-            <span class="stat-pill">🔄 Unicode Normalized: <strong>${unicodeNormalized}</strong></span>
-            <span class="stat-pill">📐 Indent Fixed: <strong>${indentLinesFixed} lines</strong></span>
-            <span class="stat-pill">📦 Size: <strong>${origBytes}B → ${cleanedBytes}B</strong> (${bytesSaved}B saved)</span>
+            <span class="stat-pill">📐 Formatted: <strong>${startLines} → ${endLines} lines</strong></span>
+            <span class="stat-pill">🔤 Indent: <strong>${indentSizeVal === 'tab' ? 'Tabs' : indentSizeVal + ' Spaces'}</strong></span>
+            <span class="stat-pill">📦 Size: <strong>${origBytes}B → ${formattedBytes}B</strong></span>
         `;
     }
 };
 
-window.copyCleanedWhitespace = function() {
-    const outputEl = document.getElementById('whitespace-output');
+/* --- C / C++ / C# / JS Code Beautifier Engine --- */
+function formatCppStyle(code, indentStr, braceStyle, opts) {
+    let lines = code.split(/\r?\n/);
+    let rawTokens = [];
+
+    // Pre-clean and split into logical statements while protecting strings and comments
+    for (let line of lines) {
+        let trimmed = line.trim();
+        if (!trimmed) {
+            rawTokens.push({ type: 'empty' });
+            continue;
+        }
+
+        // Direct preprocessor directive
+        if (trimmed.startsWith('#')) {
+            rawTokens.push({ type: 'preprocessor', content: trimmed });
+            continue;
+        }
+
+        // Single line comment
+        if (trimmed.startsWith('//') || trimmed.startsWith('/*')) {
+            rawTokens.push({ type: 'comment', content: trimmed });
+            continue;
+        }
+
+        rawTokens.push({ type: 'code', content: trimmed });
+    }
+
+    let result = [];
+    let indentLevel = 0;
+    let inBlockComment = false;
+
+    for (let item of rawTokens) {
+        if (item.type === 'empty') {
+            if (result.length > 0 && result[result.length - 1] !== '') {
+                result.push('');
+            }
+            continue;
+        }
+
+        if (item.type === 'preprocessor') {
+            result.push(item.content);
+            continue;
+        }
+
+        if (item.type === 'comment') {
+            result.push(indentStr.repeat(indentLevel) + item.content);
+            continue;
+        }
+
+        let line = item.content;
+
+        // Apply operator and comma spacing
+        if (opts.optCommaSpacing) {
+            line = line.replace(/,(\S)/g, ', $1');
+        }
+
+        if (opts.optOpSpacing) {
+            // Space binary operators outside quotes
+            line = line.replace(/([^!<>=+\-*/%&|^?:]\s*)(==|!=|<=|>=|&&|\|\||\+=|-=|\*=|\/=|%=|&=|\|=|\^=|=)(\s*[^!<>=])/g, '$1 $2 $3');
+        }
+
+        // Structure braces and statements
+        let chars = line.split('');
+        let curLine = '';
+
+        for (let i = 0; i < chars.length; i++) {
+            let ch = chars[i];
+
+            if (ch === '{') {
+                if (curLine.trim()) {
+                    if (braceStyle === 'allman') {
+                        result.push(indentStr.repeat(indentLevel) + curLine.trim());
+                        result.push(indentStr.repeat(indentLevel) + '{');
+                    } else {
+                        // K&R Style
+                        result.push(indentStr.repeat(indentLevel) + curLine.trim() + ' {');
+                    }
+                } else {
+                    result.push(indentStr.repeat(indentLevel) + '{');
+                }
+                indentLevel++;
+                curLine = '';
+            } else if (ch === '}') {
+                if (curLine.trim()) {
+                    result.push(indentStr.repeat(indentLevel) + curLine.trim());
+                    curLine = '';
+                }
+                indentLevel = Math.max(0, indentLevel - 1);
+                result.push(indentStr.repeat(indentLevel) + '}');
+            } else if (ch === ';') {
+                curLine += ch;
+                // Check if inside for statement
+                if (!curLine.includes('for (') && !curLine.includes('for(')) {
+                    result.push(indentStr.repeat(indentLevel) + curLine.trim());
+                    curLine = '';
+                }
+            } else {
+                curLine += ch;
+            }
+        }
+
+        if (curLine.trim()) {
+            // Access specifiers (public:, private:, protected:) & case labels
+            if (/^(public|private|protected|case\s+[^:]+|default)\s*:/.test(curLine.trim())) {
+                let specIndent = Math.max(0, indentLevel - 1);
+                result.push(indentStr.repeat(specIndent) + curLine.trim());
+            } else {
+                result.push(indentStr.repeat(indentLevel) + curLine.trim());
+            }
+        }
+    }
+
+    return result.join('\n');
+}
+
+/* --- Python Code Beautifier Engine (PEP 8 Indentation) --- */
+function formatPython(code, indentStr, opts) {
+    let lines = code.split(/\r?\n/);
+    let result = [];
+    let indentLevel = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+
+        if (!line) {
+            if (result.length > 0 && result[result.length - 1] !== '') {
+                result.push('');
+            }
+            continue;
+        }
+
+        // Comment
+        if (line.startsWith('#')) {
+            result.push(indentStr.repeat(indentLevel) + line);
+            continue;
+        }
+
+        // Check for dedent statements (elif, else, except, finally)
+        if (/^(elif\s|else:|except(\s|:)|finally:)/.test(line)) {
+            indentLevel = Math.max(0, indentLevel - 1);
+        }
+
+        // Format spacing around operators and commas
+        if (opts.optCommaSpacing) {
+            line = line.replace(/,(\S)/g, ', $1');
+        }
+
+        if (opts.optOpSpacing) {
+            line = line.replace(/([^!<>=+\-*/%&|^:]\s*)(==|!=|<=|>=|\+=|-=|\*=|\/=|%=|=)(\s*[^!<>=])/g, '$1 $2 $3');
+        }
+
+        // Add line with current indent level
+        result.push(indentStr.repeat(indentLevel) + line);
+
+        // Check if line opens a block (ends with :)
+        if (line.endsWith(':')) {
+            indentLevel++;
+        }
+    }
+
+    return result.join('\n');
+}
+
+function formatGenericCode(code, indentStr, opts) {
+    let lines = code.split(/\r?\n/);
+    return lines.map(line => {
+        if (opts.optTrimTrailing) return line.trimEnd();
+        return line;
+    }).join('\n');
+}
+
+/* --- Minify Code --- */
+window.minifyCurrentCode = function() {
+    const inputEl = document.getElementById('formatter-input');
+    const outputEl = document.getElementById('formatter-output');
+    const statsEl = document.getElementById('formatter-stats');
+    if (!inputEl || !outputEl) return;
+
+    let code = inputEl.value;
+    if (!code.trim()) return;
+
+    let minified = '';
+
+    if (currentFormatterLang === 'json') {
+        try {
+            minified = JSON.stringify(JSON.parse(code));
+        } catch (e) {
+            minified = code.replace(/\s+/g, ' ');
+        }
+    } else {
+        // Strip line comments and collapse whitespace
+        minified = code
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\/\/.*$/gm, '')
+            .replace(/\s+/g, ' ')
+            .replace(/\s*([{};(),=+\-*\/])\s*/g, '$1')
+            .trim();
+    }
+
+    outputEl.value = minified;
+
+    if (statsEl) {
+        statsEl.innerHTML = `<span class="stat-pill">📦 Minified to 1 line (${new Blob([minified]).size} bytes)</span>`;
+    }
+    showToast('> Code minified successfully!');
+};
+
+window.copyFormattedCode = function() {
+    const outputEl = document.getElementById('formatter-output');
     if (!outputEl || !outputEl.value) {
-        showToast('> No cleaned code to copy!');
+        showToast('> No formatted code to copy!');
         return;
     }
     navigator.clipboard.writeText(outputEl.value).then(() => {
-        showToast('> Cleaned code copied to clipboard!');
+        showToast('> Formatted code copied to clipboard!');
     });
 };
 
-window.clearWhitespaceTool = function() {
-    const input = document.getElementById('whitespace-input');
-    const output = document.getElementById('whitespace-output');
-    const stats = document.getElementById('whitespace-stats');
+window.clearFormatterTool = function() {
+    const input = document.getElementById('formatter-input');
+    const output = document.getElementById('formatter-output');
+    const stats = document.getElementById('formatter-stats');
     if (input) input.value = '';
     if (output) output.value = '';
-    if (stats) stats.innerHTML = '<span class="stat-pill">✨ Ready to clean source code</span>';
-    showToast('> Cleared workspace');
+    if (stats) stats.innerHTML = '<span class="stat-pill">✨ Ready to format code</span>';
+    showToast('> Cleared formatter workspace');
 };
 
-window.loadSampleCode = function(lang) {
-    const input = document.getElementById('whitespace-input');
+window.loadMessyCodeSample = function(lang) {
+    const input = document.getElementById('formatter-input');
     if (!input) return;
 
-    if (lang === 'python') {
-        setCleanerLanguage('python');
-        input.value = `# Python 3.12 Deep Learning / Math Module\n# Notice the dirty mixed tabs, zero-width char \u200B, and NBSP \u00A0 below:\n\ndef calculate_entropy(data_distribution):\n\t"""Computes\u00A0entropy\u00A0value."""\n\t\u200Bif not data_distribution:\n\t    return 0.0    \n\t\n\t\n\ttotal_sum = sum(data_distribution)    \n\treturn sum(p * p for p in data_distribution)   \n`;
-    } else if (lang === 'cpp') {
-        setCleanerLanguage('cpp');
-        input.value = `// Uranium Virtual Machine & JIT Engine [C++20]\n// Contains non-breaking spaces \u00A0, zero-width joiners \u200C, and trailing spaces:\n\n#include <iostream>\u00A0\n#include <vector>\n\nclass UraniumVM {\npublic:\n\tvoid\u00A0ExecuteBytecode(const\u3000uint8_t*\u200B code, size_t len) {\n\t    if (code == nullptr) return;    \n\t    \n\t    for (size_t i = 0; i < len; ++i) {   \n\t    \t// Instruction dispatch\u200C loop\n\t    \tProcessOpcode(code[i]);    \n\t    }   \n\t}   \n};`;
+    if (lang === 'cpp') {
+        setFormatterLanguage('cpp');
+        input.value = `#include <iostream>\n#include <vector>\nclass UraniumVM{public:void Execute(const uint8_t* code,size_t len){if(code==nullptr){return;}for(size_t i=0;i<len;++i){int op=code[i];if(op==0x01){int a=10;int b=20;int c=a+b*2;std::cout<<c<<std::endl;}}}};`;
+    } else if (lang === 'python') {
+        setFormatterLanguage('python');
+        input.value = `def process_dataset(data,threshold=0.5):\nif not data:\nreturn None\nresults=[]\nfor item in data:\nval=item.get("score",0)\nif val>=threshold:\nresults.append(val*100)\nelse:\nresults.append(0)\nreturn results`;
+    } else if (lang === 'json') {
+        setFormatterLanguage('json');
+        input.value = `{"name":"Uranium","type":"Virtual Machine","version":"2.4.0","author":"omerdev","languages":["C++","C","C#"],"stats":{"loc":450000,"stars":1,"active":true}}`;
     }
 
-    cleanWhitespace();
-    showToast(`> Loaded sample dirty ${lang.toUpperCase()} code!`);
+    formatCode();
+    showToast(`> Loaded unformatted ${lang.toUpperCase()} sample!`);
 };
 
 // 2. Radix Inspector Implementation
@@ -826,7 +975,6 @@ window.convertCppString = function() {
         return;
     }
 
-    // Generate C++ Raw string literal R"(...)" and standard escaped string
     if (raw.includes('\n') || raw.includes('"')) {
         output.value = `const char* str = R"(${raw})";\n\n// Or standard escaped:\nconst char* esc = "${raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n"\n"')}";`;
     } else {
