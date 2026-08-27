@@ -1,36 +1,49 @@
-# omerdev.github.io / Portfolio & Downloads Hub
+# omerdev // Developer Portfolio & Hub
 
-JetBrains Mono fontuna sahip, saf siyah/koyu temalı, kişisel açık kaynak repository indirme ve geliştirici portföy sitesi.
+A sleek, dark-themed developer portfolio and open-source project repository hub built with pure vanilla web technologies and styled with **JetBrains Mono**.
 
-## ✨ Özellikler
-
-- 🖤 **Saf Koyu / Siyah Tema**: Terminal ve modern geliştirici estetiği.
-- 🔤 **JetBrains Mono Tipografisi**: Tüm arayüz genelinde optimize edilmiş monospace font.
-- 🧭 **Üst Menü Barı**: `Home | Downloads | About`
-  - **Home**: Biyografi, sistem programlama dilleri rozetleri (C++, C, C#, Vulkan, CMake, SDL3) ve öne çıkan repolar.
-  - **Downloads**: GitHub API üzerinden canlı çekilen tüm public repolar, anlık arama/filtreleme ve her biri için **Tek Tıkla ZIP İndirme Butonu** (`Download ZIP`).
-  - **About**: `bruhgit/bruhgit/README.md` dosyanızı dinamik olarak çeken ve GitHub markdown stilleriyle render eden alan.
-- ⚡ **Offline & Rate-Limit Güvencesi**: GitHub API limitine takılsa dahi çalışan statik fallback veritabanı (`config.js`).
+🌐 **Live Site:** [https://bruhgit.github.io/omerdev/](https://bruhgit.github.io/omerdev/)
 
 ---
 
-## 🚀 GitHub Pages Üzerinde Yayınlama
+## ⚡ Features
 
-Bu projeyi GitHub Pages üzerinde yayına almak için terminalde şu komutları uygulayabilirsiniz:
+- 🖤 **Monochrome & Deep Dark Theme**: Pure black terminal aesthetic with modern subtle glow accents.
+- 🔤 **JetBrains Mono Typography**: High-legibility developer font across the entire interface.
+- 🧭 **Navigation**:
+  - `Home`: Developer profile hero, core systems programming skills (C++, C, C#, Vulkan, CMake, SDL3), project statistics, and language distribution metrics.
+  - `Downloads`: Live repository browser fetching directly from the GitHub API with **One-Click ZIP Downloads**, `git clone` command copying, and real-time search & language filter chips.
+  - `About`: Live rendering of the profile `README.md` with GitHub Markdown styling.
+- 🛡️ **Zero Dependencies**: Pure HTML5, CSS3, and modern JavaScript with no build step required.
+- 🚀 **GitHub Pages Ready**: Optimized for instant static hosting.
 
-```bash
-git push -u origin main
+---
+
+## 🛠️ Project Structure
+
+```
+omerdev/
+├── index.html       # Main application layout and tab structure
+├── styles.css       # JetBrains Mono styling, dark theme, animations
+├── config.js        # Site metadata, skills, and fallback data
+├── app.js           # GitHub API integration, tab routing, zip downloads
+├── robots.txt       # Search engine crawler configuration
+├── sitemap.xml      # SEO sitemap
+└── 404.html         # Custom 404 error page
 ```
 
-### GitHub Pages Aktif Etme:
-1. GitHub'da `omerdev` reponuza gidin.
-2. **Settings** > **Pages** menüsüne tıklayın.
-3. **Build and deployment** altında **Source** olarak `Deploy from a branch` seçin.
-4. **Branch** olarak `main` ve `/ (root)` seçip **Save** butonuna basın.
-5. Siteniz birkaç dakika içinde `https://bruhgit.github.io/omerdev/` adresinde canlıya geçecektir!
+---
+
+## ⚙️ Configuration
+
+To customize this portfolio for another GitHub user or repository:
+
+1. Open `config.js`.
+2. Update the `githubUsername` and metadata fields.
+3. Configure `skills` and `excludedRepos` as desired.
 
 ---
 
-## ⚙️ Yapılandırma (`config.js`)
+## 📄 License
 
-Kullanıcı adınızı, öne çıkan repolarınızı veya yeteneklerinizi güncellemek için [config.js](config.js) dosyasını düzenleyebilirsiniz.
+This project is licensed under the terms described in the [LICENSE](LICENSE) file.
