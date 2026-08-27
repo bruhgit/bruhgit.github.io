@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>omerdev // developer</title>
+    <meta name="description" content="Personal developer portfolio & open-source repository hub by omerdev (bruhgit).">
+    <meta name="theme-color" content="#050505">
+
+    <!-- Google Fonts: JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+    <!-- Markdown Parser & Sanitizer -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <div class="app-container">
+        <!-- Sticky Navigation Header -->
+        <header class="site-header">
+            <div class="header-inner">
+                <a href="#home" class="brand">
+                    <span class="prompt-symbol">&gt;</span>omerdev<span class="cursor"></span>
+                </a>
+
+                <!-- Navigation Bar: Home | Downloads | About -->
+                <nav>
+                    <ul class="nav-menu">
+                        <li class="nav-item">
+                            <a href="#home" class="nav-link active" data-tab="home">Home</a>
+                        </li>
+                        <li class="nav-divider">|</li>
+                        <li class="nav-item">
+                            <a href="#downloads" class="nav-link" data-tab="downloads">Downloads</a>
+                        </li>
+                        <li class="nav-divider">|</li>
+                        <li class="nav-item">
+                            <a href="#about" class="nav-link" data-tab="about">About</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- ================= HOME TAB ================= -->
+            <section id="tab-home" class="tab-content active">
+                <div class="hero-section">
+                    <div class="terminal-card">
+                        <div class="terminal-header">
+                            <span class="terminal-dot dot-red"></span>
+                            <span class="terminal-dot dot-yellow"></span>
+                            <span class="terminal-dot dot-green"></span>
+                            <span class="terminal-title">bash - session // omerdev@portfolio:~</span>
+                        </div>
+                        <div class="terminal-body">
+                            <h1 class="terminal-greeting">
+                                Hey, I'm <span class="highlight user-name">omerdev</span> 👋
+                            </h1>
+                            <p class="terminal-desc user-bio">
+                                Full-stack developer at heart, systems programmer at soul 🖤 — living inside 600,000+ line C++/C/C# codebases, getting excited whenever something says "no null".
+                            </p>
+                            
+                            <div class="badge-row" id="hero-skills">
+                                <!-- Rendered dynamically by config.js -->
+                            </div>
+
+                            <div class="hero-actions">
+                                <a href="#downloads" class="btn btn-primary" onclick="switchTab('downloads')">
+                                    📦 Browse & Download Repos
+                                </a>
+                                <a href="#about" class="btn btn-secondary" onclick="switchTab('about')">
+                                    📄 Read Profile README
+                                </a>
+                                <a href="https://github.com/bruhgit" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                                    GitHub Profile ↗
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Featured Projects on Home -->
+                <div class="section-header">
+                    <h2 class="section-title">Featured Repositories</h2>
+                    <a href="#downloads" onclick="switchTab('downloads')">View all downloads →</a>
+                </div>
+                <div class="grid-cards" id="home-featured-list">
+                    <!-- Populated dynamically by app.js -->
+                </div>
+            </section>
+
+            <!-- ================= DOWNLOADS TAB ================= -->
+            <section id="tab-downloads" class="tab-content">
+                <div class="section-header">
+                    <h2 class="section-title">Public Repositories & Downloads</h2>
+                    <span class="filter-badge" id="repo-count-badge">Loading repos...</span>
+                </div>
+
+                <div class="downloads-controls">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="repo-search" class="search-input" placeholder="Search repositories by name, language, or topic..." autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="grid-cards" id="downloads-list">
+                    <div class="loading-container" style="grid-column: 1 / -1;">
+                        <div class="spinner"></div>
+                        <p>Fetching repositories from GitHub API...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= ABOUT TAB ================= -->
+            <section id="tab-about" class="tab-content">
+                <div class="about-wrapper">
+                    <!-- Profile Header Card -->
+                    <div class="profile-card">
+                        <img class="profile-avatar user-avatar" src="https://github.com/bruhgit.png" alt="Profile Avatar">
+                        <div class="profile-info">
+                            <h2 class="profile-name user-name">omerdev</h2>
+                            <span class="profile-handle user-handle">@bruhgit</span>
+                            <p class="profile-bio user-bio">Full-stack developer at heart, systems programmer at soul 🖤</p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Rendered Markdown Container -->
+                    <div class="markdown-container" id="about-readme-content">
+                        <div class="loading-container">
+                            <div class="spinner"></div>
+                            <p>Fetching profile README.md...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+            <div class="footer-inner">
+                <div>
+                    <span>Built for GitHub Pages with pure JetBrains Mono &amp; Dark Theme</span>
+                </div>
+                <div>
+                    <a href="https://github.com/bruhgit" target="_blank" rel="noopener noreferrer">github.com/bruhgit</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
